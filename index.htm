@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于天澹</title>
+    <style>
+        :root { --hue: 200; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: url('image/BJ.png') center/cover no-repeat fixed;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* 光效开启时隐藏所有光标 */
+        body.glow-active, body.glow-active * { cursor: none !important; }
+
+        .container {
+            position: relative;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.10);
+        }
+
+        .panel-cards {
+            position: absolute;
+            left: 40px; top: 50%;
+            transform: translateY(-50%);
+            width: 110px; height: auto;
+            padding: 20px 10px;
+            display: flex; flex-direction: column; gap: 16px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+            z-index: 10;
+        }
+
+        .card {
+            width: 100%; padding: 16px 6px;
+            border-radius: 16px; cursor: pointer; text-align: center;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+        }
+        .card::before {
+            content: '';
+            position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 40%);
+            z-index: -1; opacity: 0.6; pointer-events: none;
+        }
+        .card:hover {
+            transform: translateY(-4px) scale(1.05);
+            background: rgba(255, 255, 255, 0.35);
+            border-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 1);
+        }
+        .card:active { transform: scale(0.92); }
+        .card .icon { font-size: 30px; display: block; line-height: 1; color: #1a1a1a; font-weight: 600; }
+
+        .panel-popup {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1;
+            opacity: 0; pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateX(-20px);
+        }
+        .panel-popup.active {
+            opacity: 1; pointer-events: auto; transform: translateX(0);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(180%);
+        }
+
+        .popup-content {
+            text-align: center; max-width: 80%; padding: 40px;
+            position: relative; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #textContent { display: block; }
+        .popup-content h2 { font-size: 40px; margin-bottom: 24px; color: #1a1a1a; font-weight: 600; }
+        .popup-content p { font-size: 20px; color: rgba(0, 0, 0, 0.7); line-height: 1.6; }
+        .popup-content .icon-big { font-size: 100px; margin-bottom: 30px; display: block; }
+
+        #imageContainer, #videoContainer, #bilibiliContainer {
+            display: none; width: 100%; height: 100%; max-height: 80vh;
+            border-radius: 16px; overflow: hidden;
+        }
+        #imageContainer { display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); }
+        #imageContainer img, #videoContainer video {
+            max-width: 100%; max-height: 80vh; border-radius: 16px; object-fit: contain;
+        }
+
+        #bilibiliContainer { justify-content: center; align-items: center; }
+        .bili-card {
+            padding: 60px 80px; display: flex; flex-direction: column;
+            align-items: center; gap: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+        }
+        .bili-text { font-size: 36px; font-weight: 600; color: #1a1a1a; letter-spacing: 2px; }
+
+        .aero-btn-wrapper { text-decoration: none; display: inline-block; }
+        .aero-btn {
+            display: inline-block; padding: 18px 60px; font-size: 22px;
+            font-weight: 600; color: #1a1a1a; border-radius: 40px; cursor: pointer;
+            transition: all 0.3s ease; position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.8);
+        }
+        .aero-btn::after {
+            content: ''; position: absolute; top: 2px; left: 10%; width: 80%; height: 30%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
+            border-radius: 50%; pointer-events: none;
+        }
+        .aero-btn:hover {
+            transform: scale(1.05); background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 1), 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .aero-btn:active { transform: scale(0.95); }
+
+        #cursor-glow {
+            position: fixed; pointer-events: none; z-index: 15;
+            width: 600px; height: 600px; border-radius: 50%;
+            filter: blur(50px); transform: translate(-50%, -50%);
+            mix-blend-mode: screen;
+            background: radial-gradient(circle, hsla(var(--hue), 80%, 70%, 0.5) 0%, hsla(calc(var(--hue) + 30), 80%, 90%, 0.2) 30%, transparent 70%);
+            transition: background 0.1s;
+        }
+        .trail-dot {
+            position: fixed; pointer-events: none; z-index: 15;
+            border-radius: 50%; filter: blur(4px); transform: translate(-50%, -50%);
+            mix-blend-mode: screen;
+            background: radial-gradient(circle, hsla(calc(var(--hue) + 10), 80%, 80%, 0.9) 0%, hsla(calc(var(--hue) + 40), 80%, 90%, 0.4) 50%, transparent 80%);
+            transition: background 0.1s;
+        }
+
+        #effectToggle {
+            position: fixed; top: 24px; right: 24px; z-index: 9999;
+            display: flex; align-items: center; gap: 12px;
+            padding: 8px 16px 8px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 40px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); cursor: pointer; user-select: none;
+            transition: all 0.3s ease;
+        }
+        #effectToggle:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.02); }
+        .toggle-track {
+            width: 40px; height: 24px; background: rgba(0, 0, 0, 0.15);
+            border-radius: 12px; position: relative; transition: 0.3s; flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .toggle-track.active {
+            background: rgba(64, 224, 208, 0.6);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 0 15px rgba(64, 224, 208, 0.3);
+        }
+        .toggle-thumb {
+            width: 18px; height: 18px; background: #ffffff; border-radius: 50%;
+            position: absolute; top: 3px; left: 3px;
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+        .toggle-track.active .toggle-thumb { left: 19px; }
+        .toggle-label { font-size: 14px; font-weight: 500; color: #1a1a1a; letter-spacing: 0.5px; }
+
+        @media (max-width: 768px) {
+            .container { background: rgba(0, 0, 0, 0.2); }
+            .panel-cards {
+                left: 50%; top: auto; bottom: 20px; transform: translateX(-50%);
+                flex-direction: row; width: auto; padding: 12px 20px; border-radius: 30px; gap: 12px;
+            }
+            .card { padding: 12px 14px; width: auto; flex: 0 0 auto; }
+            .card .icon { font-size: 24px; margin-bottom: 0; }
+            .popup-content h2 { font-size: 28px; }
+            .popup-content .icon-big { font-size: 60px; }
+            #imageContainer, #videoContainer, #bilibiliContainer { max-height: 60vh; }
+            .bili-card { padding: 30px 20px; gap: 30px; border-radius: 16px; width: 90%; }
+            .bili-text { font-size: 24px; }
+            .aero-btn { font-size: 18px; padding: 14px 30px; }
+            #cursor-glow, .trail-dot, #effectToggle { display: none; }
+        }
+    </style>
+</head>
+<body class="glow-active">
+
+    <div id="cursor-glow"></div>
+    <div id="trail-container">
+        <div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div>
+        <div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div>
+        <div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div>
+        <div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div>
+        <div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div>
+        <div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div>
+    </div>
+
+    <div id="effectToggle">
+        <span class="toggle-label">光效</span>
+        <div class="toggle-track active" id="toggleTrack">
+            <div class="toggle-thumb" id="toggleThumb"></div>
+        </div>
+    </div>
+
+<div class="container">
+    <div class="panel-cards" id="cardContainer">
+        <div class="card" data-index="0"><span class="icon">QQ</span></div>
+        <div class="card" data-index="1"><span class="icon">B站</span></div>
+        <div class="card" data-index="2"><span class="icon">小群</span></div>
+        <div class="card" data-index="3"><span class="icon">4</span></div>
+        <div class="card" data-index="4"><span class="icon">5</span></div>
+        <div class="card" data-index="5"><span class="icon">银角</span></div>
+    </div>
+
+    <div class="panel-popup" id="popupPanel">
+        <div class="popup-content">
+            <div id="textContent">
+                <span class="icon-big" id="popupIcon">喵</span>
+                <h2 id="popupTitle">嗯哼</h2>
+                <p id="popupDesc">小彩蛋</p>
+            </div>
+
+            <div id="imageContainer">
+                <img id="popupImage" src="image/TDQ.PNG" alt="图片">
+            </div>
+
+            <div id="videoContainer">
+                <video id="myVideo" controls playsinline>
+                    <source id="videoSource" src="" type="video/mp4">
+                </video>
+            </div>
+
+            <div id="bilibiliContainer">
+                <div class="bili-card">
+                    <div class="bili-text">天澹的B站</div>
+                    <a href="https://space.bilibili.com/1830045896/upload/video" target="_blank" class="aero-btn-wrapper">
+                        <div class="aero-btn">点击跳转</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const data = [
+        { icon: 'QQ', title: 'QQ', desc: 'QQ' },
+        { icon: 'B站', title: '天澹的B站', desc: '点击下方按钮跳转' },
+        { icon: '小群', title: '小群', desc: '小群' },
+        { icon: '4', title: '敬请期待', desc: '敬请期待' },
+        { icon: '5', title: '敬请期待', desc: '敬请期待' },
+        { icon: '银角', title: '6', desc: '6' }
+    ];
+
+    const popupPanel = document.getElementById('popupPanel');
+    const popupIcon = document.getElementById('popupIcon');
+    const popupTitle = document.getElementById('popupTitle');
+    const popupDesc = document.getElementById('popupDesc');
+    const cards = document.querySelectorAll('.card');
+
+    const textContent = document.getElementById('textContent');
+    const imageContainer = document.getElementById('imageContainer');
+    const popupImage = document.getElementById('popupImage');
+    const videoContainer = document.getElementById('videoContainer');
+    const videoSource = document.getElementById('videoSource');
+    const myVideo = document.getElementById('myVideo');
+    const bilibiliContainer = document.getElementById('bilibiliContainer');
+    const effectToggle = document.getElementById('effectToggle');
+
+    let currentIndex = -1;
+
+    cards.forEach((card, index) => {
+        card.addEventListener('click', () => {
+            if (popupPanel.classList.contains('active') && currentIndex === index) {
+                closePopup(); return;
+            }
+
+            if (index === 0) {
+                textContent.style.display = 'none';
+                imageContainer.style.display = 'flex';
+                videoContainer.style.display = 'none';
+                bilibiliContainer.style.display = 'none';
+                popupImage.src = 'image/TDQ.PNG';
+            } 
+            else if (index === 1) {
+                textContent.style.display = 'none';
+                imageContainer.style.display = 'none';
+                videoContainer.style.display = 'none';
+                bilibiliContainer.style.display = 'flex';
+            }
+            else if (index === 2) {
+                textContent.style.display = 'none';
+                imageContainer.style.display = 'flex';
+                videoContainer.style.display = 'none';
+                bilibiliContainer.style.display = 'none';
+                popupImage.src = 'image/XQ.png';
+            }
+            else if (index === 5) {
+                textContent.style.display = 'none';
+                imageContainer.style.display = 'none';
+                videoContainer.style.display = 'block';
+                bilibiliContainer.style.display = 'none';
+                videoSource.src = 'video/YJ.MP4';
+                myVideo.load();
+            } 
+            else {
+                const item = data[index];
+                textContent.style.display = 'block';
+                imageContainer.style.display = 'none';
+                videoContainer.style.display = 'none';
+                bilibiliContainer.style.display = 'none';
+                popupIcon.textContent = item.icon;
+                popupTitle.textContent = item.title;
+                popupDesc.textContent = item.desc;
+            }
+
+            if (!popupPanel.classList.contains('active')) {
+                popupPanel.classList.add('active');
+                effectToggle.style.display = 'none'; // 弹窗展开时隐藏开关
+            }
+            currentIndex = index;
+        });
+    });
+
+    popupPanel.addEventListener('click', (e) => {
+        if (e.target === popupPanel) closePopup();
+    });
+
+    function closePopup() {
+        popupPanel.classList.remove('active');
+        currentIndex = -1;
+        textContent.style.display = 'block';
+        imageContainer.style.display = 'none';
+        videoContainer.style.display = 'none';
+        bilibiliContainer.style.display = 'none';
+        myVideo.pause();
+        myVideo.currentTime = 0;
+        effectToggle.style.display = 'flex'; // 弹窗收起时恢复显示开关
+    }
+
+    // 光效控制
+    const glow = document.getElementById('cursor-glow');
+    const trailDots = document.querySelectorAll('.trail-dot');
+    const history = [];
+    const maxTrail = 18;
+    let isEffectEnabled = true;
+    const toggleTrack = document.getElementById('toggleTrack');
+
+    effectToggle.addEventListener('click', () => {
+        isEffectEnabled = !isEffectEnabled;
+        toggleTrack.classList.toggle('active');
+
+        if (isEffectEnabled) {
+            glow.style.display = 'block';
+            trailDots.forEach(dot => dot.style.display = 'block');
+            document.body.classList.add('glow-active');
+        } else {
+            glow.style.display = 'none';
+            trailDots.forEach(dot => { dot.style.display = 'none'; dot.style.opacity = 0; });
+            history.length = 0;
+            document.body.classList.remove('glow-active');
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isEffectEnabled) return;
+        const hue = (e.clientX / window.innerWidth) * 360;
+        document.documentElement.style.setProperty('--hue', hue);
+        history.push({ x: e.clientX, y: e.clientY });
+        if (history.length > maxTrail) history.shift();
+        glow.style.left = e.clientX + 'px';
+        glow.style.top = e.clientY + 'px';
+    });
+
+    function animateTrail() {
+        if (isEffectEnabled) {
+            const len = history.length;
+            trailDots.forEach((dot, i) => {
+                const idx = Math.max(0, len - 1 - i);
+                const point = history[idx];
+                if (point) {
+                    const progress = i / trailDots.length;
+                    const size = Math.max(6, 45 - (progress * 39));
+                    const opacity = Math.max(0, 0.9 - (progress * 0.9));
+                    dot.style.width = size + 'px';
+                    dot.style.height = size + 'px';
+                    dot.style.opacity = opacity;
+                    dot.style.left = point.x + 'px';
+                    dot.style.top = point.y + 'px';
+                } else {
+                    dot.style.opacity = 0;
+                }
+            });
+        }
+        requestAnimationFrame(animateTrail);
+    }
+    animateTrail();
+</script>
+</body>
+</html>
